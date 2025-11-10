@@ -19,7 +19,7 @@ function App() {
     const numericValue = Number(value.toString().replace(/,/g, "")); // ✅ แปลงกลับก่อนตรวจสอบ
 
     if (field === "age") {
-      if (numericValue < 1 || numericValue > 74) error = "กรุณากรอกอายุในช่วง 1-74 ปี";
+      if (numericValue < 25 || numericValue > 74) error = "กรุณากรอกอายุในช่วง 25-74 ปี";
     } else if (field === "loanAmount") {
       if (numericValue < 1 || numericValue > 3000000)
         error = "กรุณากรอกวงเงินกู้คงเหลือในช่วง 1 - 3,000,000 บาท";
