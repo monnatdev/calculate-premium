@@ -13,31 +13,48 @@ function App() {
   });
   const [formError, setFormError] = useState(false);
 
+  // ✅ ฟังก์ชันตรวจสอบค่า input
   const validateInput = (field, value) => {
     let error = "";
+    const numericValue = Number(value.toString().replace(/,/g, "")); // ✅ แปลงกลับก่อนตรวจสอบ
+
     if (field === "age") {
-      if (value < 1 || value > 74) error = "กรุณากรอกอายุในช่วง 1-74 ปี";
+      if (numericValue < 1 || numericValue > 74) error = "กรุณากรอกอายุในช่วง 1-74 ปี";
     } else if (field === "loanAmount") {
-      if (value < 1 || value > 3000000)
+      if (numericValue < 1 || numericValue > 3000000)
         error = "กรุณากรอกวงเงินกู้คงเหลือในช่วง 1 - 3,000,000 บาท";
     } else if (field === "coveragePeriod") {
-      if (value < 1 || value > 3)
+      if (numericValue < 1 || numericValue > 3)
         error = "กรุณากรอกระยะเวลาคุ้มครองในช่วง 1-3 ปี";
     }
     setErrors((prev) => ({ ...prev, [field]: error }));
   };
 
+  // ✅ ฟังก์ชัน format ตัวเลขให้มี comma
   const formatNumber = (num) =>
     num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 
+  // ✅ เมื่อพิมพ์ช่อง loanAmount → ใส่ comma ทันที
+  const handleLoanAmountChange = (e) => {
+    const rawValue = e.target.value.replace(/[^\d]/g, ""); // เอาเฉพาะตัวเลข
+    const formattedValue = rawValue ? formatNumber(rawValue) : "";
+    setLoanAmount(formattedValue);
+    validateInput("loanAmount", formattedValue);
+  };
+
+  // ✅ ฟังก์ชันคำนวณเบี้ย
   const calculatePremium = () => {
+    const loanValue = Number(loanAmount.toString().replace(/,/g, "")); // แปลงค่ากลับก่อนคำนวณ
+    const ageValue = Number(age);
+    const coverageValue = Number(coveragePeriod);
+
     if (
       errors.age ||
       errors.loanAmount ||
       errors.coveragePeriod ||
-      !age ||
-      !loanAmount ||
-      !coveragePeriod
+      !ageValue ||
+      !loanValue ||
+      !coverageValue
     ) {
       setFormError(true);
       return;
@@ -46,12 +63,12 @@ function App() {
     setFormError(false);
 
     let ageRate = 0;
-    if (age <= 60) ageRate = 790;
-    else if (age <= 65) ageRate = 1390;
-    else if (age <= 70) ageRate = 1680;
+    if (ageValue <= 60) ageRate = 790;
+    else if (ageValue <= 65) ageRate = 1390;
+    else if (ageValue <= 70) ageRate = 1680;
     else ageRate = 1800;
 
-    const result = (loanAmount / 100000) * ageRate * coveragePeriod;
+    const result = (loanValue / 100000) * ageRate * coverageValue;
     setPremium(result.toFixed(2));
   };
 
@@ -67,15 +84,15 @@ function App() {
         alignItems: "center",
       }}
     >
-     <div
+      <div
         style={{
           maxWidth: "460px",
           width: "100%",
           backgroundColor: "#fff",
           borderRadius: "16px",
           boxShadow: "0 6px 15px rgba(0,0,0,0.1)",
-          padding: "40px 32px", // ✅ เพิ่ม padding ด้านข้าง
-          boxSizing: "border-box", // ✅ ป้องกัน padding overflow
+          padding: "40px 32px",
+          boxSizing: "border-box",
         }}
       >
         <h1
@@ -90,83 +107,78 @@ function App() {
           🧮 คำนวณเบี้ยประกันภัย
         </h1>
 
-        {[
-          {
-            label: "อายุ:",
-            value: age,
-            setter: setAge,
-            field: "age",
-            placeholder: "กรอกอายุ (ปี)",
-          },
-          {
-            label: "วงเงินกู้คงเหลือ:",
-            value: loanAmount,
-            setter: setLoanAmount,
-            field: "loanAmount",
-            placeholder: "กรอกวงเงินกู้คงเหลือ (บาท)",
-          },
-          {
-            label: "ระยะเวลาคุ้มครอง:",
-            value: coveragePeriod,
-            setter: setCoveragePeriod,
-            field: "coveragePeriod",
-            placeholder: "กรอกระยะเวลาคุ้มครอง (ปี)",
-          },
-        ].map(({ label, value, setter, field, placeholder }) => (
-          <div
-            key={field}
-            style={{
-              marginBottom: "20px",
-              display: "flex",
-              flexDirection: "column",
+        {/* ช่องอายุ */}
+        <div style={{ marginBottom: "20px" }}>
+          <label style={{ fontWeight: 600, color: "#444" }}>อายุ:</label>
+          <input
+            type="number"
+            value={age}
+            onChange={(e) => {
+              setAge(e.target.value);
+              validateInput("age", e.target.value);
             }}
-          >
-            <label
-              style={{
-                marginBottom: "6px",
-                fontWeight: "600",
-                color: "#444",
-                fontSize: "0.95rem",
-              }}
-            >
-              {label}
-            </label>
-            <input
-              type="number"
-              value={value}
-              onChange={(e) => {
-                setter(e.target.value);
-                validateInput(field, e.target.value);
-              }}
-              placeholder={placeholder}
-              style={{
-                width: "100%", // ✅ ยังคงให้เต็ม container
-                boxSizing: "border-box", // ✅ ป้องกัน input ชนขอบ
-                padding: "10px 12px",
-                borderRadius: "8px",
-                border: "1px solid #ccc",
-                outline: "none",
-                transition: "0.2s border-color",
-              }}
-              onFocus={(e) =>
-                (e.target.style.borderColor = "rgb(214,51,132)")
-              }
-              onBlur={(e) => (e.target.style.borderColor = "#ccc")}
-            />
-            {errors[field] && (
-              <span
-                style={{
-                  color: "red",
-                  marginTop: "5px",
-                  fontSize: "0.85rem",
-                }}
-              >
-                {errors[field]}
-              </span>
-            )}
-          </div>
-        ))}
+            placeholder="กรอกอายุ (ปี)"
+            style={{
+              width: "100%",
+              boxSizing: "border-box",
+              padding: "10px 12px",
+              borderRadius: "8px",
+              border: "1px solid #ccc",
+              outline: "none",
+            }}
+          />
+          {errors.age && <span style={{ color: "red" }}>{errors.age}</span>}
+        </div>
 
+        {/* ✅ ช่องวงเงินกู้คงเหลือ */}
+        <div style={{ marginBottom: "20px" }}>
+          <label style={{ fontWeight: 600, color: "#444" }}>วงเงินกู้คงเหลือ:</label>
+          <input
+            type="text"
+            value={loanAmount}
+            onChange={handleLoanAmountChange}
+            placeholder="กรอกวงเงินกู้คงเหลือ (บาท)"
+            style={{
+              width: "100%",
+              boxSizing: "border-box",
+              padding: "10px 12px",
+              borderRadius: "8px",
+              border: "1px solid #ccc",
+              textAlign: "left", // ✅ ชิดขวาเหมือนเครื่องคิดเลข
+              outline: "none",
+            }}
+          />
+          {errors.loanAmount && (
+            <span style={{ color: "red" }}>{errors.loanAmount}</span>
+          )}
+        </div>
+
+        {/* ช่องระยะเวลาคุ้มครอง */}
+        <div style={{ marginBottom: "20px" }}>
+          <label style={{ fontWeight: 600, color: "#444" }}>ระยะเวลาคุ้มครอง:</label>
+          <input
+            type="number"
+            value={coveragePeriod}
+            onChange={(e) => {
+              setCoveragePeriod(e.target.value);
+              validateInput("coveragePeriod", e.target.value);
+            }}
+            placeholder="กรอกระยะเวลาคุ้มครอง (ปี)"
+            style={{
+              width: "100%",
+              boxSizing: "border-box",
+              padding: "10px 12px",
+              borderRadius: "8px",
+              border: "1px solid #ccc",
+              outline: "none",
+            }}
+          />
+          {errors.coveragePeriod && (
+            <span style={{ color: "red" }}>{errors.coveragePeriod}</span>
+          )}
+        </div>
+
+        {/* ปุ่มคำนวณ */}
         <button
           onClick={calculatePremium}
           style={{
@@ -181,25 +193,14 @@ function App() {
             fontWeight: "600",
             transition: "0.3s",
           }}
-          onMouseEnter={(e) =>
-            (e.target.style.backgroundColor = "#b82c70")
-          }
-          onMouseLeave={(e) =>
-            (e.target.style.backgroundColor = "#d63384")
-          }
+          onMouseEnter={(e) => (e.target.style.backgroundColor = "#b82c70")}
+          onMouseLeave={(e) => (e.target.style.backgroundColor = "#d63384")}
         >
           คำนวณ
         </button>
 
         {formError && (
-          <div
-            style={{
-              color: "red",
-              marginTop: "12px",
-              textAlign: "center",
-              fontSize: "0.9rem",
-            }}
-          >
+          <div style={{ color: "red", marginTop: "12px", textAlign: "center" }}>
             กรุณากรอกข้อมูลให้ครบถ้วน
           </div>
         )}
@@ -218,9 +219,7 @@ function App() {
             }}
           >
             💰 เบี้ยประกันภัยโดยประมาณ:{" "}
-            <span style={{ fontSize: "1.2rem" }}>
-              {formatNumber(premium)} บาท
-            </span>
+            <span style={{ fontSize: "1.2rem" }}>{formatNumber(premium)} บาท</span>
           </div>
         )}
       </div>
