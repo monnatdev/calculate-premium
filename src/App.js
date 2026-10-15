@@ -34,6 +34,10 @@ function App() {
   const formatNumber = (num) =>
     num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 
+  // ✅ format เงินให้มีทศนิยม 2 ตำแหน่ง
+  const formatMoney = (num) =>
+    num.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
   // ✅ เมื่อพิมพ์ช่อง loanAmount → ใส่ comma ทันที
   const handleLoanAmountChange = (e) => {
     const rawValue = e.target.value.replace(/[^\d]/g, ""); // เอาเฉพาะตัวเลข
@@ -62,14 +66,20 @@ function App() {
 
     setFormError(false);
 
-    let ageRate = 0;
-    if (ageValue <= 60) ageRate = 790;
-    else if (ageValue <= 65) ageRate = 1390;
-    else if (ageValue <= 70) ageRate = 1680;
-    else ageRate = 1800;
+    // อัตราเบี้ย (วิริยะ อัตราใหม่ 9/10/2569) หน่วย: ต่อหมื่น (76 = 0.76%)
+    let rateBp = 0;
+    if (ageValue <= 60) rateBp = 76;
+    else if (ageValue <= 65) rateBp = 151;
+    else if (ageValue <= 70) rateBp = 189;
+    else rateBp = 298;
 
-    const result = (loanValue / 100000) * ageRate * coverageValue;
-    setPremium(result.toFixed(2));
+    // คำนวณเป็นสตางค์เพื่อเลี่ยงปัญหาทศนิยม
+    const netSatang = Math.round(loanValue * rateBp * coverageValue / 100);
+    // อากร: 1 บาท ต่อทุก 250 บาท หรือเศษของ 250 บาท (ปัดขึ้น)
+    const duty = Math.ceil(netSatang / 25000);
+    const net = netSatang / 100;
+
+    setPremium({ net, duty, total: net + duty });
   };
 
   return (
@@ -218,10 +228,12 @@ function App() {
               fontWeight: "600",
             }}
           >
-            💰 เบี้ยประกันภัยโดยประมาณ:{" "}
-            <span style={{ fontSize: "1.2rem" }}>{formatNumber(premium)} บาท</span>
-            <br/>
-            (ทั้งนี้ยังไม่รวมภาษีอากร)
+            <div>ค่าเบี้ยสุทธิ: {formatMoney(premium.net)} บาท</div>
+            <div>อากร: {formatMoney(premium.duty)} บาท</div>
+            <div style={{ marginTop: "8px" }}>
+              💰 เบี้ยรวม:{" "}
+              <span style={{ fontSize: "1.2rem" }}>{formatMoney(premium.total)} บาท</span>
+            </div>
           </div>
         )}
       </div>
