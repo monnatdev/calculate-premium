@@ -75,11 +75,10 @@ function App() {
 
     // คำนวณเป็นสตางค์เพื่อเลี่ยงปัญหาทศนิยม
     const netSatang = Math.round(loanValue * rateBp * coverageValue / 100);
-    // อากร: 1 บาท ต่อทุก 250 บาท หรือเศษของ 250 บาท (ปัดขึ้น)
-    const duty = Math.ceil(netSatang / 25000);
     const net = netSatang / 100;
 
-    setPremium({ net, duty, total: net + duty });
+    // เบี้ยรวม = เบี้ยสุทธิ (ไม่รวมอากร)
+    setPremium({ net, total: net });
   };
 
   return (
@@ -229,7 +228,6 @@ function App() {
             }}
           >
             <div>ค่าเบี้ยสุทธิ: {formatMoney(premium.net)} บาท</div>
-            <div>อากร: {formatMoney(premium.duty)} บาท</div>
             <div style={{ marginTop: "8px" }}>
               💰 เบี้ยรวม:{" "}
               <span style={{ fontSize: "1.2rem" }}>{formatMoney(premium.total)} บาท</span>
